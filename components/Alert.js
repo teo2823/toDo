@@ -1,19 +1,18 @@
-import { StyleSheet, Text, View, Alert } from 'react-native'
-import React from 'react'
+import { Alert } from 'react-native';
+import React from 'react';
 
-export default function Alert({message}) {
-    const createTwoButtonAlert = () =>
-    Alert.alert('Alert Title', 'My Alert Msg', [
+export default function Alerta({ message, confirmMsj, func }) {
+  Alert.alert(
+    message,
+    [
       {
         text: 'Cancel',
-        onPress: () => console.log('Cancel Pressed'),
+        onPress: () => console.log('Cancel Pressed'), // Aquí puedes poner cualquier acción que desees al presionar Cancel
+        style: 'cancel',
       },
-      {text: 'OK', onPress: () => console.log('OK Pressed')},
-    ]);
-  return (
-    <View>
-      <Text>Alert</Text>
-    </View>
-  )
+      { text: confirmMsj, onPress: () => func() }, // Aquí ejecutamos la función func cuando se presiona OK
+    ],
+    { cancelable: false }
+  );
 }
 

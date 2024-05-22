@@ -27,7 +27,7 @@ export default function ItemToDo({ id, text, isCompleted, isToday, hour }) {
     }
   };
 
-  const createTwoButtonAlert = () =>
+  const buttonAlert = () =>
   Alert.alert("Warning", "Are you sure to delete it?", [
     {
       text: "Cancel",
@@ -80,7 +80,9 @@ export default function ItemToDo({ id, text, isCompleted, isToday, hour }) {
       </View>
 
       <View></View>
-      <TouchableOpacity onPress={createTwoButtonAlert} style={styles.delete}>
+      <TouchableOpacity onPress={buttonAlert}
+        style={styles.delete}
+      >
         <Icon name="delete" size={20} color={colors.marshland[300]} />
       </TouchableOpacity>
     </View>

@@ -1,84 +1,109 @@
-import { StyleSheet, Text, View, Image, TouchableOpacity, Platform } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  TouchableOpacity,
+  Platform,
+} from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { colors } from "../theme/colors";
 import ToDoList from "../components/ToDoList";
-import { toDosData } from "../data/todos";
-import { useState, useEffect } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSelector, useDispatch } from "react-redux";
 import { hideCompletedReducer, setTodoReducer } from "../redux/todosSlice";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import AddPic from "./AddPic";
 
 export default function Home() {
-
-  const todos = useSelector(state => state.todos.todos)
-
-  // const [localData, setLocalData] = useState(
-  //   toDosData.sort((a, b) => {
-  //     return a.isCompleted - b.isCompleted;
-  //   })
-  // );
+  const [userimg, setUserimg] = useState(null);
+  const todos = useSelector((state) => state.todos.todos);
   const [isHidden, setIsHidden] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const sheetRef = useRef(null);
+  const snapPoints = ["25%"];
   const navigation = useNavigation();
+  const route = useRoute();
+  const selectedImage = route.params && route.params.selectedImage;
   const dispatch = useDispatch();
+  const handleSnapPress = useCallback((index) => {
+    setIsOpen(true);
+    sheetRef.current?.snapToIndex(index);
+  }, []);
 
   useEffect(() => {
     const getTodos = async () => {
-      try{
+      try {
         const todos = await AsyncStorage.getItem("@Todos");
-        if(todos !== null) {
+        if (todos !== null) {
           dispatch(setTodoReducer(JSON.parse(todos)));
         }
+      } catch (err) {
+        console.log(err);
       }
-      catch (err){
-        console.log(err)
-      }
+    };
+    getTodos();
+  }, []);
+
+  useEffect(() => {
+    if (selectedImage || selectedImage == null) {
+      setUserimg(selectedImage);
     }
-    getTodos()
-  }, [])
+  }, [selectedImage]);
+
+  useEffect(() => {
+    const getStoredImage = async () => {
+      try {
+        const storedImage = await AsyncStorage.getItem("@imgprofile");
+        if (storedImage !== null) {
+          setUserimg(JSON.parse(storedImage));
+        }
+      } catch (error) {
+        console.log("Error fetching stored image: ", error);
+      }
+    };
+    getStoredImage();
+  }, []);
 
   const handlePress = async () => {
-    if(isHidden){
-      setIsHidden(false)
+    if (isHidden) {
+      setIsHidden(false);
       const todos = await AsyncStorage.getItem("@Todos");
-      if(todos !== null){
+      if (todos !== null) {
         dispatch(setTodoReducer(JSON.parse(todos)));
       }
       return;
     }
-    setIsHidden(true)
-    dispatch(hideCompletedReducer())
-    // if (isHidden) {
-    //   setIsHidden(false);
-    //   setLocalData(toDosData.sort((a, b) => a.isCompleted - b.isCompleted));
-    // } else {
-    //   setIsHidden(!isHidden);
-    //   setLocalData(localData.filter((todo) => !todo.isCompleted));
-    // }
+    setIsHidden(true);
+    dispatch(hideCompletedReducer());
   };
 
   const handleAdd = () => {
-    navigation.navigate("AddTodo")
-  }
+    navigation.navigate("AddTodo");
+  };
 
   return (
-    <SafeAreaView style={{
-      flex: 1,
-      backgroundColor: colors.marshland[950],
-      paddingTop: Platform.OS === "android" && 10,
-      paddingHorizontal: 10,
-    }}>
-      <View
-        style={{flex: 1}}
-      >
-        <Image
-          source={{
-            uri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOcLuv_OQg6YtGIY1D8l6g8Ua6SI1TYXzMOw&usqp=CAU",
-          }}
-          style={styles.pic}
-        />
+    <SafeAreaView
+      style={[
+        {
+          flex: 1,
+          backgroundColor: colors.marshland[950],
+          paddingTop: Platform.OS === "android" && 10,
+          paddingHorizontal: 10,
+        },
+        isOpen && { backgroundColor: "rgba(0, 0, 0, 0.1" },
+      ]}
+    >
+      <View style={{ flex: 1 }}>
+        <TouchableOpacity onPress={() => handleSnapPress(0)}>
+          <Image
+            source={userimg ? { uri: userimg } : require("../assets/user.jpeg")}
+            style={styles.pic}
+          />
+        </TouchableOpacity>
         <View style={styles.containerTitle}>
           <Text style={styles.mainTitle}>Today</Text>
           <TouchableOpacity onPress={handlePress}>
@@ -94,6 +119,19 @@ export default function Home() {
           <Icon name="plus-circle" size={50} color={colors.marshland[50]} />
         </TouchableOpacity>
       </View>
+
+      {isOpen && (
+        <BottomSheet
+          ref={sheetRef}
+          snapPoints={snapPoints}
+          enablePanDownToClose={true}
+          onClose={() => setIsOpen(false)}
+        >
+          <BottomSheetView>
+            <AddPic modalState={setIsOpen} />
+          </BottomSheetView>
+        </BottomSheet>
+      )}
     </SafeAreaView>
   );
 }
